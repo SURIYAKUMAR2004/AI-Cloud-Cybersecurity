@@ -1,0 +1,16 @@
+{
+    "evidence_id": "testuser_20260824_203214.json",
+    "preserved_at": "2026-08-24T20:32:14.580903",
+    "user": "testuser",
+    "start_time": "2026-08-24 20:30:00",
+    "end_time": "2026-08-24 20:30:00",
+    "sequence_score": 75.0,
+    "severity": "HIGH",
+    "assessment": "SUSPICIOUS_ATTACK_SEQUENCE",
+    "attack_phases": "DATA_EXFILTRATION",
+    "indicators": "FAILED_OPERATION | LARGE_DATA_TRANSFER | PRIVILEGED_CLOUD_OPERATION",
+    "events_analyzed": 1,
+    "recommended_response": "ALERT_SECURITY_TEAM_AND_MONITOR",
+    "response_priority": "P2",
+    "execution_mode": "SIMULATION"
+}

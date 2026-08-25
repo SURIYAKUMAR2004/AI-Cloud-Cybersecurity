@@ -1,0 +1,16 @@
+{
+    "evidence_id": "charlie_20260824_202145.json",
+    "preserved_at": "2026-08-24T20:21:45.815892",
+    "user": "charlie",
+    "start_time": "2026-08-24 18:31:59.855890",
+    "end_time": "2026-08-24 18:40:57.274069",
+    "sequence_score": 100.0,
+    "severity": "CRITICAL",
+    "assessment": "POSSIBLE_ACCOUNT_COMPROMISE",
+    "attack_phases": "PRIVILEGE_ABUSE \u2192 DATA_EXFILTRATION",
+    "indicators": "FAILED_OPERATION | LARGE_DATA_TRANSFER | PRIVILEGED_CLOUD_OPERATION | SUSPICIOUS_EXTERNAL_SOURCE",
+    "events_analyzed": 6,
+    "recommended_response": "ESCALATE_SECURITY_INCIDENT",
+    "response_priority": "P1",
+    "execution_mode": "SIMULATION"
+}
