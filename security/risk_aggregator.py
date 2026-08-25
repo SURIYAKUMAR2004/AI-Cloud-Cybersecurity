@@ -21,7 +21,6 @@ def calculate_signal_agreement(
 
     return agreement
 
-
 def calculate_final_risk(
     contextual_risk,
     chain_score,
@@ -30,56 +29,52 @@ def calculate_final_risk(
     """
     Hierarchical risk aggregation.
 
-    Combines event-level contextual risk,
-    incident-level attack-chain risk,
-    and the number of correlated events.
+    Combines:
+    - Event-level contextual risk
+    - Incident-level attack-chain risk
+    - Correlation strength
     """
 
-    # -----------------------------------------
-    # 1. Event-level intelligence
-    # -----------------------------------------
-
+    # Event-level intelligence
     event_component = contextual_risk * 0.40
 
-    # -----------------------------------------
-    # 2. Incident-level intelligence
-    # -----------------------------------------
-
+    # Incident-level attack-chain intelligence
     chain_component = chain_score * 0.45
 
-    # -----------------------------------------
-    # 3. Correlation strength
-    # -----------------------------------------
-
+    # Correlation strength
     correlation_component = min(
         events_correlated * 2,
         10
     )
 
+    # Base final score
     final_score = (
         event_component
         + chain_component
         + correlation_component
     )
 
+    # Strong attack chain + meaningful contextual evidence
+    # indicates a highly correlated attack.
+    if (
+        chain_score >= 90
+        and 40 <= contextual_risk < 80
+    ):
+        final_score += 10
+
+    # Keep score within 0-100
     final_score = min(
         round(final_score),
         100
     )
 
-    # -----------------------------------------
-    # 4. Risk classification
-    # -----------------------------------------
-
+    # Risk classification
     if final_score >= 80:
         level = "CRITICAL"
-
     elif final_score >= 60:
         level = "HIGH"
-
     elif final_score >= 30:
         level = "MEDIUM"
-
     else:
         level = "LOW"
 

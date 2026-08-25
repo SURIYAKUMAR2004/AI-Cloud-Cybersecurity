@@ -2,6 +2,8 @@ import pandas as pd
 
 from ai.risk_engine import calculate_risk
 from security.contextual_risk_engine import calculate_contextual_score
+from security.security_orchestrator import analyze_security_events
+
 from security.risk_aggregator import (
     calculate_signal_agreement,
     calculate_final_risk,
@@ -21,6 +23,7 @@ def test_normal_event_is_low_risk():
 
     assert score == 0
     assert level == "LOW"
+
 
 
 def test_suspicious_ip_failed_large_transfer_is_critical():
@@ -71,3 +74,45 @@ def test_final_risk_is_critical():
 
     assert score == 91
     assert level == "CRITICAL"
+
+def test_end_to_end_critical_attack_response():
+    events = pd.DataFrame([
+        {
+            "timestamp": "2026-08-25 23:45:00",
+            "user": "attacker",
+            "source_ip": "45.155.205.10",
+            "action": "Login",
+            "status": "Failed",
+            "bytes_transferred": 418840,
+        },
+        {
+            "timestamp": "2026-08-25 23:45:05",
+            "user": "attacker",
+            "source_ip": "45.155.205.10",
+            "action": "AssumeRole",
+            "status": "Success",
+            "bytes_transferred": 60000,
+        },
+        {
+            "timestamp": "2026-08-25 23:45:15",
+            "user": "attacker",
+            "source_ip": "45.155.205.10",
+            "action": "DeleteObject",
+            "status": "Success",
+            "bytes_transferred": 100000,
+        },
+    ])
+
+    result = analyze_security_events(events)
+
+    assert not result.empty
+    assert "final_risk_score" in result.columns
+    assert "final_risk_level" in result.columns
+    assert "response" in result.columns
+    assert "priority" in result.columns
+    assert "execution_mode" in result.columns
+
+    assert result["final_risk_level"].iloc[0] == "CRITICAL"
+    assert result["priority"].iloc[0] == "P1"
+    assert result["response"].iloc[0] == "ESCALATE_SECURITY_INCIDENT"
+    assert result["execution_mode"].iloc[0] == "SIMULATION"
