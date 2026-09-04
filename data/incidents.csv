@@ -1,2 +1,0 @@
-incident_id,created_at,user,severity,risk_score,assessment,events_correlated,attack_pattern,status,last_updated
-INC-0001,2026-08-24T18:56:15,alice,CRITICAL,100,POSSIBLE_ACCOUNT_COMPROMISE,15,Failed operation → Privileged cloud operation → Suspicious external source → Large data transfer,RESOLVED,2026-08-24T18:57:06

@@ -1,27 +1,52 @@
+# ================================
 # Python
+# ================================
 __pycache__/
 *.py[cod]
 *.pyo
 
-# Virtual environment
+# ================================
+# Virtual environments
+# ================================
 venv/
 .venv/
 
-# Testing
+# ================================
+# Testing / caches
+# ================================
 .pytest_cache/
 .coverage
 htmlcov/
 
-# macOS
+# ================================
+# macOS / IDE
+# ================================
 .DS_Store
-
-# IDE
 .vscode/
 .idea/
 
-# Runtime/generated data
-data/realtime_state.json
-
-# Environment/secrets
+# ================================
+# Environment / secrets
+# ================================
 .env
 *.env
+
+# ================================
+# Runtime / generated security data
+# ================================
+data/realtime_state.json
+data/aws_cloudtrail_events.csv
+data/aws_cloudtrail_events_before_timestamp_repair.csv
+data/aws_realtime_incidents.csv
+data/live_events.csv
+data/live_events_backup.csv
+data/incidents.csv
+data/incidents/
+
+# ================================
+# Backup / temporary source files
+# ================================
+*.backup
+*.backup2
+*_backup.py
+*_before_*.py

@@ -8,132 +8,237 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from security.live_log_stream import generate_security_event
+from ai.anomaly_detector import detect_anomalies
+from security.threat_detector import apply_behavior_analysis
+from security.contextual_risk_engine import apply_contextual_risk
+from security.response_engine import apply_response_engine
+from security.attack_correlator import correlate_attack_chain
+
+
+BASELINE_FILE = PROJECT_ROOT / "data" / "sample_logs.csv"
+LIVE_FILE = PROJECT_ROOT / "data" / "live_events.csv"
+
+
+def build_live_analysis(event):
+    """
+    Run one live event through the complete AI security pipeline.
+
+    The historical sample logs provide the baseline.
+    The incoming event is evaluated as a new detection event.
+    """
+
+    # -------------------------------------------------
+    # 1. Load historical baseline
+    # -------------------------------------------------
+
+    baseline_df = pd.read_csv(BASELINE_FILE)
+
+    # -------------------------------------------------
+    # 2. Add the live event to the historical dataset
+    # -------------------------------------------------
+
+    live_df = pd.DataFrame([event])
+
+    combined_df = pd.concat(
+        [baseline_df, live_df],
+        ignore_index=True
+    )
+
+    # -------------------------------------------------
+    # 3. AI anomaly detection
+    # -------------------------------------------------
+
+    analyzed_df = detect_anomalies(combined_df)
+
+    # -------------------------------------------------
+    # 4. Behavioral analysis
+    # -------------------------------------------------
+
+    baseline, detection_results = apply_behavior_analysis(
+        analyzed_df,
+        baseline_size=len(baseline_df)
+    )
+
+    # -------------------------------------------------
+    # 5. Contextual risk
+    # -------------------------------------------------
+
+    detection_results = apply_contextual_risk(
+        detection_results
+    )
+
+    # -------------------------------------------------
+    # 6. Response engine
+    # -------------------------------------------------
+
+    detection_results = apply_response_engine(
+        detection_results
+    )
+
+    return detection_results
+
+
+def analyze_attack_chain():
+    """
+    Analyze the accumulated live events for correlated
+    multi-event attack patterns.
+    """
+
+    if not LIVE_FILE.exists():
+        return pd.DataFrame()
+
+    try:
+        live_df = pd.read_csv(LIVE_FILE)
+
+        if live_df.empty:
+            return pd.DataFrame()
+
+        return correlate_attack_chain(live_df)
+
+    except Exception as error:
+        print(
+            f"\nAttack correlation warning: {error}"
+        )
+        return pd.DataFrame()
 
 
 def process_live_event(event):
 
-    df = pd.DataFrame([event])
-
-    print("\n===== REAL-TIME SECURITY EVENT =====")
-
-    print(df.to_string(index=False))
-
-    # Basic real-time threat indicators
-    suspicious_ip = event["source_ip"] in {
-        "45.155.205.10",
-        "103.27.186.20",
-        "185.220.101.5"
-    }
-
-    privileged_action = event["action"] in {
-        "AssumeRole",
-        "CreateUser",
-        "ChangePassword",
-        "DeleteObject"
-    }
-
-    large_transfer = (
-        event["bytes_transferred"] > 50000
+    print(
+        "\n===== REAL-TIME AI SECURITY ANALYSIS ====="
     )
 
-    failed_operation = (
-        event["status"] == "Failed"
+    # -------------------------------------------------
+    # Complete AI pipeline
+    # -------------------------------------------------
+
+    results = build_live_analysis(event)
+
+    if results.empty:
+        print("\nNo analysis result generated.")
+        return
+
+    result = results.iloc[-1]
+
+    # -------------------------------------------------
+    # Display event
+    # -------------------------------------------------
+
+    print("\nEvent:")
+    print(
+        pd.DataFrame([event]).to_string(
+            index=False
+        )
     )
 
-    risk_score = 0
-    reasons = []
-
-    if suspicious_ip:
-        risk_score += 30
-        reasons.append(
-            "Suspicious source IP"
-        )
-
-    if privileged_action:
-        risk_score += 25
-        reasons.append(
-            "High-risk cloud operation"
-        )
-
-    if large_transfer:
-        risk_score += 30
-        reasons.append(
-            "Unusually large data transfer"
-        )
-
-    if failed_operation:
-        risk_score += 15
-        reasons.append(
-            "Failed security operation"
-        )
-
-    risk_score = min(
-        risk_score,
-        100
-    )
-
-    if risk_score >= 80:
-        risk_level = "CRITICAL"
-
-    elif risk_score >= 60:
-        risk_level = "HIGH"
-
-    elif risk_score >= 30:
-        risk_level = "MEDIUM"
-
-    else:
-        risk_level = "LOW"
+    # -------------------------------------------------
+    # AI anomaly result
+    # -------------------------------------------------
 
     print(
-        f"\nRisk Score: {risk_score}"
+        f"\nAI Threat Status: "
+        f"{result['threat_status']}"
     )
 
     print(
-        f"Risk Level: {risk_level}"
+        f"AI Anomaly Score: "
+        f"{result['anomaly_score']:.4f}"
     )
 
-    print("\nThreat Indicators:")
+    # -------------------------------------------------
+    # Behavioral analysis
+    # -------------------------------------------------
 
-    if reasons:
+    print(
+        f"Behavior Deviation: "
+        f"{result['behavior_deviation_score']}"
+    )
 
-        for reason in reasons:
-            print(f"- {reason}")
+    print(
+        f"Behavior Status: "
+        f"{result['behavior_status']}"
+    )
+
+    # -------------------------------------------------
+    # Contextual risk
+    # -------------------------------------------------
+
+    print(
+        f"\nContextual Risk Score: "
+        f"{result['contextual_risk_score']}"
+    )
+
+    print(
+        f"Contextual Risk Level: "
+        f"{result['contextual_risk_level']}"
+    )
+
+    # -------------------------------------------------
+    # Response
+    # -------------------------------------------------
+
+    print(
+        f"\nRecommended Response: "
+        f"{result['recommended_response']}"
+    )
+
+    print(
+        f"Response Reason: "
+        f"{result['response_reason']}"
+    )
+
+    # -------------------------------------------------
+    # Attack-chain correlation
+    # -------------------------------------------------
+
+    incidents = analyze_attack_chain()
+
+    if incidents is not None and not incidents.empty:
+
+        print(
+            "\n===== CORRELATED ATTACK DETECTED ====="
+        )
+
+        top_incident = incidents.iloc[0]
+
+        print(
+            f"User: {top_incident['user']}"
+        )
+
+        print(
+            f"Chain Score: "
+            f"{top_incident['chain_score']}"
+        )
+
+        print(
+            f"Severity: "
+            f"{top_incident['severity']}"
+        )
+
+        print(
+            f"Assessment: "
+            f"{top_incident['assessment']}"
+        )
+
+        print(
+            f"Events Correlated: "
+            f"{top_incident['events_correlated']}"
+        )
+
+        print(
+            f"Attack Pattern: "
+            f"{top_incident['attack_pattern']}"
+        )
 
     else:
 
         print(
-            "- No significant indicators"
+            "\nAttack Chain: "
+            "No correlated incident detected."
         )
-
-    if risk_level == "CRITICAL":
-
-        response = (
-            "BLOCK_AND_ISOLATE"
-        )
-
-    elif risk_level == "HIGH":
-
-        response = (
-            "RESTRICT_ACCESS_AND_ALERT"
-        )
-
-    elif risk_level == "MEDIUM":
-
-        response = (
-            "ALERT_SECURITY_TEAM"
-        )
-
-    else:
-
-        response = "MONITOR"
 
     print(
-        f"\nRecommended Response: {response}"
-    )
-
-    print(
-        "\n===================================="
+        "\n============================================"
     )
 
 
@@ -148,6 +253,10 @@ if __name__ == "__main__":
     )
 
     import time
+
+    from security.live_log_stream import (
+        generate_security_event
+    )
 
     try:
 

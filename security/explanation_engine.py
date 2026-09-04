@@ -76,12 +76,91 @@ def generate_explanation(row):
     return " | ".join(reasons)
 
 
+
+def generate_reason_details(row):
+
+    details = []
+
+    # AI anomaly
+    if row["threat_status"] == "Anomaly":
+        details.append({
+            "category": "AI Detection",
+            "reason": "Unusual activity detected by the AI anomaly detector"
+        })
+
+    # Behavioral deviation
+    behavior_score = row["behavior_deviation_score"]
+
+    if behavior_score >= 70:
+        details.append({
+            "category": "Behavior Analysis",
+            "reason": "Severe deviation from the user's behavioral baseline"
+        })
+    elif behavior_score >= 40:
+        details.append({
+            "category": "Behavior Analysis",
+            "reason": "High deviation from the user's behavioral baseline"
+        })
+    elif behavior_score >= 20:
+        details.append({
+            "category": "Behavior Analysis",
+            "reason": "Moderate deviation from the user's behavioral baseline"
+        })
+
+    # High-risk operation
+    if row["action"] in HIGH_RISK_ACTIONS:
+        details.append({
+            "category": "Cloud Operation",
+            "reason": f"High-risk cloud operation: {row['action']}"
+        })
+
+    # Failed activity
+    if row["status"] == "Failed":
+        details.append({
+            "category": "Security Status",
+            "reason": "The security operation failed"
+        })
+
+    # Data transfer
+    if row["bytes_transferred"] > 50000:
+        details.append({
+            "category": "Data Transfer",
+            "reason": "Unusually large data transfer detected"
+        })
+    elif row["bytes_transferred"] > 10000:
+        details.append({
+            "category": "Data Transfer",
+            "reason": "Elevated data transfer detected"
+        })
+
+    # Unusual time
+    hour = row["hour"]
+
+    if hour < 6 or hour > 22:
+        details.append({
+            "category": "Time Analysis",
+            "reason": "Activity occurred outside the normal security window"
+        })
+
+    if not details:
+        details.append({
+            "category": "Analysis",
+            "reason": "No significant security deviation detected"
+        })
+
+    return details
+
 def apply_explanation_engine(df):
 
     df = df.copy()
 
     df["security_explanation"] = df.apply(
         generate_explanation,
+        axis=1
+    )
+
+    df["security_reason_details"] = df.apply(
+        generate_reason_details,
         axis=1
     )
 

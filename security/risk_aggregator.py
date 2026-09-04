@@ -21,6 +21,7 @@ def calculate_signal_agreement(
 
     return agreement
 
+
 def calculate_final_risk(
     contextual_risk,
     chain_score,
@@ -62,6 +63,18 @@ def calculate_final_risk(
     ):
         final_score += 10
 
+    # A highly correlated multi-event attack chain
+    # should remain critical even when the event-level
+    # behavioral model has limited detection history.
+    if (
+        chain_score >= 90
+        and events_correlated >= 3
+    ):
+        final_score = max(
+            final_score,
+            90
+        )
+
     # Keep score within 0-100
     final_score = min(
         round(final_score),
@@ -71,10 +84,13 @@ def calculate_final_risk(
     # Risk classification
     if final_score >= 80:
         level = "CRITICAL"
+
     elif final_score >= 60:
         level = "HIGH"
+
     elif final_score >= 30:
         level = "MEDIUM"
+
     else:
         level = "LOW"
 
@@ -88,6 +104,13 @@ def aggregate_incident_risk(
     """
     Connects event-level intelligence with
     incident-level attack correlation.
+
+    Important:
+    chain_score already exists in the incident
+    dataframe produced by attack_correlator.py.
+
+    Therefore this function does NOT add another
+    chain_score column.
     """
 
     if incidents.empty:
@@ -102,7 +125,7 @@ def aggregate_incident_risk(
         user = incident["user"]
 
         # -------------------------------------
-        # Find events belonging to this user
+        # Find evaluated events for this user
         # -------------------------------------
 
         user_events = event_results[
@@ -110,17 +133,16 @@ def aggregate_incident_risk(
         ]
 
         if user_events.empty:
-
             contextual_risk = 0
 
         else:
-
             contextual_risk = int(
                 user_events[
                     "contextual_risk_score"
                 ].max()
             )
 
+        # chain_score already belongs to incident
         chain_score = int(
             incident["chain_score"]
         )
@@ -150,12 +172,12 @@ def aggregate_incident_risk(
             )
         )
 
+        # IMPORTANT:
+        # Do NOT add chain_score here.
+        # It already exists in incidents.
         results.append({
-
-            "contextual_risk": contextual_risk,
-
-            "chain_score":
-                chain_score,
+            "contextual_risk":
+                contextual_risk,
 
             "signal_agreement":
                 agreement,
@@ -170,7 +192,9 @@ def aggregate_incident_risk(
                 final_level
         })
 
-    risk_df = pd.DataFrame(results)
+    risk_df = pd.DataFrame(
+        results
+    )
 
     incidents = incidents.reset_index(
         drop=True
@@ -180,13 +204,23 @@ def aggregate_incident_risk(
         drop=True
     )
 
-    return pd.concat(
+    combined = pd.concat(
         [
             incidents,
             risk_df
         ],
         axis=1
     )
+
+    # Safety check:
+    # Ensure no duplicate column names can leave
+    # the risk aggregation layer.
+    combined = combined.loc[
+        :,
+        ~combined.columns.duplicated()
+    ]
+
+    return combined
 
 
 if __name__ == "__main__":
@@ -197,8 +231,4 @@ if __name__ == "__main__":
 
     print(
         "Module loaded successfully."
-    )
-
-    print(
-        "\n========================================="
     )
