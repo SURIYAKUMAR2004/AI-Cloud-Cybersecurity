@@ -5,6 +5,7 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 import textwrap
 
 try:
@@ -38,7 +39,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+# Automatically refresh the SOC dashboard every 5 seconds
+st_autorefresh(interval=5000, key="soc_live_refresh")
 BASE_DIR = Path(__file__).resolve().parent
 AWS_FILE = BASE_DIR / "data" / "aws_cloudtrail_events.csv"
 LIVE_FILE = BASE_DIR / "data" / "live_events.csv"
@@ -940,20 +942,18 @@ for item in incident_records:
         high_incidents += 1
 
 if incident_records:
-    threat_score = max(
-        [
-            number_value(
-                pd.Series(item),
-                ["final_risk_score", "chain_score", "risk_score", "risk"],
-                0,
-            )
-            for item in incident_records
-        ]
-        + [0]
-    )
-else:
-    threat_score = max([score_from_row(r) for _, r in ai_df.iterrows()] + [0])
+    latest_incident = incident_records[-1]
 
+    threat_score = number_value(
+        pd.Series(latest_incident),
+        ["final_risk_score", "chain_score", "risk_score", "risk"],
+        0,
+    )
+elif not ai_df.empty:
+    latest_row = ai_df.iloc[-1]
+    threat_score = score_from_row(latest_row)
+else:
+    threat_score = 0
 threat_score = int(round(threat_score))
 threat_level = severity_from_score(threat_score)
 

@@ -50,3 +50,11 @@ data/incidents/
 *.backup2
 *_backup.py
 *_before_*.py
+
+# Live/demo security event data
+live_events.csv
+data/live_events_demo_backup.csv
+
+# Local backup copies
+app*.py.save
+* copy.py
